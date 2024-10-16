@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px; /* Added padding for smaller screens */
+            overflow: hidden;
+        }
+    
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            position: relative;
+        }
+    
+        .hangman-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            flex: 1;
+            width: 100%; /* Ensures it takes full width on smaller screens */
+        }
+    
+        #hangmanCanvas {
+            border: 2px solid #000;
+            width: 100%;
+            max-width: 250px; /* Responsive width */
+            height: 300px; /* Auto height to maintain aspect ratio */
+        }
+    
+        .game-title {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+    
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            width: 100%; /* Responsive width */
+            text-align: center;
+        }
+    
+        .word-placeholder {
+            font-size: 28px;
+            letter-spacing: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+    
+        .hint-text {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+    
+        .incorrect-guesses {
+            font-size: 18px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+    
+        .letter-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(35px, 1fr)); /* Adjusts to screen size */
+            gap: 10px;
+            justify-items: center;
+        }
+    
+        .letter {
+            background-color: #6a11cb;
+            color: #fff;
+            padding: 10px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            min-width: 35px;
+        }
+    
+        .letter:hover {
+            background-color: #2575fc;
+        }
+    
+        .letter:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    
+        .message {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+    
+        .play-again-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            color: #fff;
+            background-color: #6a11cb;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: none; /* Initially hidden */
+        }
+    
+        .play-again-button:hover {
+            background-color: #2575fc;
+        }
+    
+        /* Media Queries for Different Screen Sizes */
+        @media screen and (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+    
+            #hangmanCanvas {
+                max-width: 200px; /* Adjust for smaller screens */
+            }
+    
+            .word-placeholder {
+                font-size: 22px;
+                letter-spacing: 3px;
+            }
+    
+            .letter {
+                padding: 8px;
+                font-size: 16px;
+            }
+    
+            .message {
+                font-size: 20px;
+            }
+        }
+    
+        @media screen and (max-width: 480px) {
+            .game-title {
+                font-size: 20px;
+            }
+    
+            .word-placeholder {
+                font-size: 20px;
+            }
+    
+            .letter {
+                padding: 6px;
+                font-size: 14px;
+            }
+    
+            .hint-text {
+                font-size: 14px;
+            }
+    
+            .incorrect-guesses {
+                font-size: 16px;
+            }
+    
+            .message {
+                font-size: 18px;
+            }
+    
+            .play-again-button {
+                padding: 8px 16px;
+                font-size: 16px;
+            }
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="game-container">
+        <div class="hangman-container">
+            <canvas id="hangmanCanvas"></canvas>
+            <p class="game-title">HANGMAN GAME</p>
+        </div>
+        <div class="game-info">
+            <p class="word-placeholder" id="wordPlaceholder">_ _ _ _ _ _ _</p>
+            <p class="hint-text" id="hint">Hint: A form of expression using colors or designs</p>
+            <p class="incorrect-guesses" id="incorrectGuesses">Incorrect guesses: 0 / 6</p>
+            <div class="letter-buttons">
+                <button class="letter" id="A">A</button>
+                <button class="letter" id="B">B</button>
+                <button class="letter" id="C">C</button>
+                <button class="letter" id="D">D</button>
+                <button class="letter" id="E">E</button>
+                <button class="letter" id="F">F</button>
+                <button class="letter" id="G">G</button>
+                <button class="letter" id="H">H</button>
+                <button class="letter" id="I">I</button>
+                <button class="letter" id="J">J</button>
+                <button class="letter" id="K">K</button>
+                <button class="letter" id="L">L</button>
+                <button class="letter" id="M">M</button>
+                <button class="letter" id="N">N</button>
+                <button class="letter" id="O">O</button>
+                <button class="letter" id="P">P</button>
+                <button class="letter" id="Q">Q</button>
+                <button class="letter" id="R">R</button>
+                <button class="letter" id="S">S</button>
+                <button class="letter" id="T">T</button>
+                <button class="letter" id="U">U</button>
+                <button class="letter" id="V">V</button>
+                <button class="letter" id="W">W</button>
+                <button class="letter" id="X">X</button>
+                <button class="letter" id="Y">Y</button>
+                <button class="letter" id="Z">Z</button>
+            </div>
+            <p class="message" id="message"></p>
+            <button class="play-again-button" id="playAgainButton">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of words and hints
+        const words = [
+            { word: "VOLCANO", hint: "A mountain that erupts with lava" },
+            { word: "COMPUTER", hint: "A machine for performing calculations" },
+            { word: "JAVASCRIPT", hint: "A programming language for the web" },
+            { word: "ELEPHANT", hint: "A large animal with a trunk" },
+            { word: "JELLYFISH", hint: " A sea creature with tentacles that stings" },
+            { word: "TELESCOPE", hint: "A tool used to look at stars and planets" },
+            { word: "ORIGAMI", hint: "The Japanese art of paper folding" },
+            { word: "ECLIPSE", hint: "When the sun or moon is covered by another celestial body" },
+            { word: "PYRAMID", hint: "A triangular structure from ancient Egypt" }
+        ];
+
+        let selectedWordData;
+        const maxGuesses = 6;
+        let incorrectGuesses = 0;
+        let guessedWord = [];
+        let guessedLetters = [];
+
+        function selectRandomWord() {
+            selectedWordData = words[Math.floor(Math.random() * words.length)];
+        }
+
+        function initializeGame() {
+            incorrectGuesses = 0;
+            guessedLetters = [];
+            selectRandomWord(); // Pick a random word
+            guessedWord = Array(selectedWordData.word.length).fill("_");
+
+            document.getElementById("hint").innerText = `Hint: ${selectedWordData.hint}`;
+            document.getElementById("wordPlaceholder").innerText = guessedWord.join(" ");
+            document.getElementById("incorrectGuesses").innerText = `Incorrect guesses: ${incorrectGuesses} / ${maxGuesses}`;
+            document.getElementById("message").innerText = ""; // Clear the message
+            document.getElementById("playAgainButton").style.display = "none"; // Hide play again button
+
+            const letterButtons = document.querySelectorAll(".letter");
+            letterButtons.forEach(button => {
+                button.disabled = false; // Enable buttons
+            });
+
+            const canvas = document.getElementById("hangmanCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+        }
+
+        document.getElementById("playAgainButton").addEventListener("click", () => {
+            initializeGame();
+        });
+
+        const letterButtons = document.querySelectorAll(".letter");
+        letterButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                const letter = button.innerText;
+                button.disabled = true;
+                checkGuess(letter);
+            });
+        });
+
+        function checkGuess(letter) {
+            if (guessedLetters.includes(letter)) {
+                return;
+            }
+
+            guessedLetters.push(letter);
+
+            if (selectedWordData.word.includes(letter)) {
+                selectedWordData.word.split("").forEach((char, index) => {
+                    if (char === letter) {
+                        guessedWord[index] = letter;
+                    }
+                });
+
+                document.getElementById("wordPlaceholder").innerText = guessedWord.join(" ");
+
+                if (guessedWord.join("") === selectedWordData.word) {
+                    document.getElementById("message").innerText = "Congratulations! You guessed the word!";
+                    document.getElementById("playAgainButton").style.display = "block"; // Show play again button
+                }
+            } else {
+                incorrectGuesses++;
+                document.getElementById("incorrectGuesses").innerText = `Incorrect guesses: ${incorrectGuesses} / ${maxGuesses}`;
+                drawHangman(incorrectGuesses);
+
+                if (incorrectGuesses === maxGuesses) {
+                    document.getElementById("message").innerText = `Game Over! The word was: ${selectedWordData.word}`;
+                    document.getElementById("playAgainButton").style.display = "block"; // Show play again button
+                }
+            }
+        }
+
+        function drawHangman(incorrectGuesses) {
+            const canvas = document.getElementById("hangmanCanvas");
+            const ctx = canvas.getContext("2d");
+
+            switch (incorrectGuesses) {
+                case 1:
+                    ctx.beginPath();
+                    ctx.moveTo(50, 280);
+                    ctx.lineTo(200, 280);
+                    ctx.stroke();
+                    break;
+                case 2:
+                    ctx.beginPath();
+                    ctx.moveTo(125, 280);
+                    ctx.lineTo(125, 50);
+                    ctx.stroke();
+                    break;
+                case 3:
+                    ctx.beginPath();
+                    ctx.moveTo(125, 50);
+                    ctx.lineTo(175, 50);
+                    ctx.stroke();
+                    break;
+                case 4:
+                    ctx.beginPath();
+                    ctx.moveTo(175, 50);
+                    ctx.lineTo(175, 80);
+                    ctx.stroke();
+                    break;
+                case 5:
+                    ctx.beginPath();
+                    ctx.arc(175, 100, 20, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+                case 6:
+                    ctx.beginPath();
+                    ctx.moveTo(175, 120);
+                    ctx.lineTo(175, 200);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(175, 140);
+                    ctx.lineTo(150, 180);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(175, 140);
+                    ctx.lineTo(200, 180);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(175, 200);
+                    ctx.lineTo(150, 240);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(175, 200);
+                    ctx.lineTo(200, 240);
+                    ctx.stroke();
+                    break;
+            }
+        }
+
+        initializeGame();
+    </script>
+</body>
+</html>
